@@ -1,0 +1,3 @@
+- 12:17 office-manager: task created and started; routed to code-reviewer (read-only review)
+- 12:19 code-reviewer: done; 1 bug (company_skills read from wrong TOML table, build_site.py:62, confirmed), 6 risks, nits; no files written
+- 12:19 office-manager: review closed as done; fix not requested (read-only), left for the user to decide

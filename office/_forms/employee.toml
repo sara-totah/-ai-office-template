@@ -1,0 +1,22 @@
+# Blank employee form. The Hiring Manager fills this in, you approve it,
+# then it is pasted under its department in office/roster.toml
+# and `python3 tools/build_agents.py` turns it into .claude/agents/<id>.md.
+
+  [[departments.roles]]
+  id = ""              # kebab-case, unique, e.g. "yield-engineer"
+  name = ""            # e.g. "Yield Engineer"
+  status = "now"       # now | later | retired
+  one = ""             # the ONE thing this role does, one sentence
+  skills = []          # ids from [skills.*]; write new ones with the skill form
+  preset = "analyst"   # read-only | analyst | builder | tests-only | shipper | db-read | db-write
+                       # mail-read | mail-draft | docs | brain | office | hardware | ask-all
+  model = "sonnet"     # opus (deep reasoning) | sonnet (everyday) | haiku (fast lookups)
+  tools_note = ""      # libraries and access it needs, for people to read
+  hands_off_to = []    # role ids it usually passes work to
+
+# Questions the Hiring Manager answers before filling it in:
+# 1. What is the one thing? What is it NOT allowed to do?
+# 2. Which existing role is closest, and why isn't a new skill on that role enough?
+# 3. What does it read and what does it write?
+# 4. Which actions need the user's approval?
+# 5. Who hands it work, and who does it hand work to?

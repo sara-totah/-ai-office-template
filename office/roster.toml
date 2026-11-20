@@ -1,0 +1,1624 @@
+# Roster: the single source of truth for the office.
+# Edit this file (or ask /hire), then run:  python3 tools/build_agents.py
+# Each role does ONE thing. Skills live in [skills.<id>] at the bottom.
+
+company_skills = ["pick-up-task", "ask-plain", "cite-source", "self-check", "hand-off", "report-back"]
+
+[company]
+name = "My AI Office"
+tagline = "One specialist per job."
+integration_branch = "develop"   # where 'ship' merges and pushes; main only when you ask
+
+
+# Permission presets. tools = what the employee may use.
+# extra_tools = connector (MCP) tool names, e.g. your mail app's read/draft tools.
+
+[presets."read-only"]
+note = "Reads files and the repo. Changes nothing."
+tools = ["Read", "Grep", "Glob"]
+extra_tools = []
+
+[presets."analyst"]
+note = "Reads everything, runs Python in a scratch folder, writes results to out/."
+tools = ["Read", "Grep", "Glob", "Bash", "Write"]
+extra_tools = []
+
+[presets."builder"]
+note = "Edits code inside a worktree and runs tests. Cannot push."
+tools = ["Read", "Grep", "Glob", "Bash", "Edit", "Write"]
+extra_tools = []
+
+[presets."tests-only"]
+note = "Edits only tests/ and fixtures. Runs tests."
+tools = ["Read", "Grep", "Glob", "Bash", "Edit", "Write"]
+extra_tools = []
+
+[presets."shipper"]
+note = "Commits, merges and pushes to the integration branch. Push to main and force-push are blocked."
+tools = ["Read", "Grep", "Glob", "Bash"]
+extra_tools = []
+
+[presets."db-read"]
+note = "SELECT queries only. Credentials from .env, never printed."
+tools = ["Read", "Grep", "Glob", "Bash"]
+extra_tools = []
+
+[presets."db-write"]
+note = "Writes to the DB only after you confirm the exact SQL. Reports RUN or NOT RUN."
+tools = ["Read", "Grep", "Glob", "Bash", "Write"]
+extra_tools = []
+
+[presets."mail-read"]
+note = "Reads mail, chat and shared drives. Sends nothing. Add your connector's read tools to extra_tools."
+tools = ["Read", "Grep", "Glob", "Write"]
+extra_tools = []
+
+[presets."mail-draft"]
+note = "Reads mail and chat, creates drafts. Add your connector's read and draft tools to extra_tools; never its send tool."
+tools = ["Read", "Grep", "Glob", "Write"]
+extra_tools = []
+
+[presets."docs"]
+note = "Reads everything, writes only docs/ and out/."
+tools = ["Read", "Grep", "Glob", "Write", "Edit"]
+extra_tools = []
+
+[presets."brain"]
+note = "Writes only brain/."
+tools = ["Read", "Grep", "Glob", "Write", "Edit"]
+extra_tools = []
+
+[presets."office"]
+note = "Writes only office/ and runs the build scripts."
+tools = ["Read", "Grep", "Glob", "Bash", "Write", "Edit"]
+extra_tools = []
+
+[presets."hardware"]
+note = "Asks before anything that moves a motor or changes station state."
+tools = ["Read", "Grep", "Glob", "Bash", "Edit", "Write"]
+extra_tools = []
+
+[presets."ask-all"]
+note = "Asks before every command that changes something."
+tools = ["Read", "Grep", "Glob", "Bash"]
+extra_tools = []
+
+# ────────────────────────────────────────────
+[[departments]]
+id = "exec"
+name = "Executive Office"
+about = "Runs the office. The only part that talks to you directly."
+skills = ["daily-brief"]
+
+  [[departments.roles]]
+  id = "office-manager"
+  name = "Office Manager"
+  status = "now"   # now | later | retired
+  main = true   # the main Claude session (CLAUDE.md), not a subagent
+  one = "Talks to you and routes every task to the fewest people needed"
+  skills = ["route", "plan-gate", "approval-gate"]
+  preset = "brain"
+  model = "opus"
+  tools_note = "all tools (main session)"
+  hands_off_to = ["office-manager"]
+
+  [[departments.roles]]
+  id = "chief-of-staff"
+  name = "Chief of Staff"
+  status = "now"   # now | later | retired
+  one = "Knows the state of every open task"
+  skills = ["status", "close-task", "handoff"]
+  preset = "read-only"
+  model = "haiku"
+  tools_note = "git (read), task files"
+  hands_off_to = ["office-manager"]
+
+  [[departments.roles]]
+  id = "brain-keeper"
+  name = "Brain Keeper"
+  status = "now"   # now | later | retired
+  one = "Writes your rules and decisions into the brain, without duplicates"
+  skills = ["remember", "dedupe", "forget-wrong"]
+  preset = "brain"
+  model = "haiku"
+  tools_note = "memory files"
+  hands_off_to = ["office-manager"]
+
+# ────────────────────────────────────────────
+[[departments]]
+id = "hr"
+name = "HR"
+about = "Staffs every task. When nobody on the roster fits a task, or part of one, HR extends a role, brings in a contractor or hires."
+skills = ["extend-before-hire"]
+
+  [[departments.roles]]
+  id = "talent-scout"
+  name = "Talent Scout"
+  status = "now"   # now | later | retired
+  one = "Finds which parts of a task nobody can do, and decides how to cover them"
+  skills = ["gap-check", "staffing-decision"]
+  preset = "read-only"
+  model = "opus"
+  tools_note = "Read (office/, roster)"
+  hands_off_to = ["contractor-desk", "hiring-manager", "skill-trainer"]
+
+  [[departments.roles]]
+  id = "hiring-manager"
+  name = "Hiring Manager"
+  status = "now"   # now | later | retired
+  one = "Creates new permanent employees from the blank form"
+  skills = ["job-spec", "hire", "edit-role", "retire"]
+  preset = "office"
+  model = "sonnet"
+  tools_note = "Write (office/ only)"
+  hands_off_to = ["onboarding-officer"]
+
+  [[departments.roles]]
+  id = "skill-trainer"
+  name = "Skill Trainer"
+  status = "now"   # now | later | retired
+  one = "Writes new skills and gives them to existing roles"
+  skills = ["write-skill", "add-skill"]
+  preset = "office"
+  model = "sonnet"
+  tools_note = "Write (office/ and brain/skills/)"
+  hands_off_to = ["onboarding-officer"]
+
+  [[departments.roles]]
+  id = "contractor-desk"
+  name = "Contractor Desk"
+  status = "now"   # now | later | retired
+  one = "One-task specialists that leave when the task is done"
+  skills = ["hire-contractor", "end-contract", "convert-to-hire"]
+  preset = "office"
+  model = "sonnet"
+  tools_note = "Write (office/_contractors/ only)"
+  hands_off_to = ["office-manager"]
+
+  [[departments.roles]]
+  id = "onboarding-officer"
+  name = "Onboarding Officer"
+  status = "now"   # now | later | retired
+  one = "Sets new hires up and keeps the roster page true"
+  skills = ["onboard", "roster-sync"]
+  preset = "office"
+  model = "haiku"
+  tools_note = "office/ files, build scripts"
+  hands_off_to = ["office-manager"]
+
+  [[departments.roles]]
+  id = "performance-reviewer"
+  name = "Performance Reviewer"
+  status = "later"   # now | later | retired
+  one = "Which roles get used, corrected or never called"
+  skills = ["role-review", "overlap-check"]
+  preset = "read-only"
+  model = "sonnet"
+  tools_note = "Read (out/, done/, brain/)"
+  hands_off_to = ["hiring-manager"]
+
+# ────────────────────────────────────────────
+[[departments]]
+id = "strat"
+name = "Strategy & Ideas"
+about = "Thinks before anyone builds: new ideas, hard problems, big decisions, risks."
+skills = ["options-with-pick", "decision-record"]
+
+  [[departments.roles]]
+  id = "innovation-lead"
+  name = "Innovation Lead"
+  status = "now"   # now | later | retired
+  one = "New ideas and better ways to do things"
+  skills = ["brainstorm", "what-if"]
+  preset = "docs"
+  model = "opus"
+  tools_note = "Read"
+  hands_off_to = ["problem-solver"]
+
+  [[departments.roles]]
+  id = "problem-solver"
+  name = "Problem Solver"
+  status = "now"   # now | later | retired
+  one = "Breaks a messy problem into options with one recommendation"
+  skills = ["options", "first-principles"]
+  preset = "docs"
+  model = "opus"
+  tools_note = "Read"
+  hands_off_to = ["office-manager"]
+
+  [[departments.roles]]
+  id = "council-moderator"
+  name = "Council Moderator"
+  status = "now"   # now | later | retired
+  one = "Runs the 5-advisor council on big decisions"
+  skills = ["council"]
+  preset = "docs"
+  model = "opus"
+  tools_note = "several independent sub-analyses"
+  hands_off_to = ["office-manager"]
+
+  [[departments.roles]]
+  id = "risk-analyst"
+  name = "Risk Analyst"
+  status = "now"   # now | later | retired
+  one = "What could fail, and how to prevent it"
+  skills = ["pre-mortem", "failure-modes"]
+  preset = "docs"
+  model = "opus"
+  tools_note = "Read"
+  hands_off_to = ["software-architect"]
+
+# ────────────────────────────────────────────
+[[departments]]
+id = "prod"
+name = "Product & Design"
+about = "Decides what to build and how it should feel to use."
+skills = ["screenshot-review", "glossary-check"]
+
+  [[departments.roles]]
+  id = "product-manager"
+  name = "Product Manager"
+  status = "now"   # now | later | retired
+  one = "What users need, and in what order"
+  skills = ["requirements", "user-flows", "todo-from-handover"]
+  preset = "docs"
+  model = "sonnet"
+  tools_note = "Read, Microsoft 365 (read)"
+  hands_off_to = ["software-architect"]
+
+  [[departments.roles]]
+  id = "ux-designer"
+  name = "UX Designer"
+  status = "now"   # now | later | retired
+  one = "How a flow works for the person using it"
+  skills = ["flow-review", "reduce-steps"]
+  preset = "docs"
+  model = "sonnet"
+  tools_note = "UI preview screenshots"
+  hands_off_to = ["gui-developer"]
+
+  [[departments.roles]]
+  id = "ui-designer"
+  name = "UI Designer"
+  status = "now"   # now | later | retired
+  one = "One visual look across all apps"
+  skills = ["theme", "colour", "layout"]
+  preset = "docs"
+  model = "sonnet"
+  tools_note = "project theme"
+  hands_off_to = ["gui-developer"]
+
+  [[departments.roles]]
+  id = "naming-copy-editor"
+  name = "Naming & Copy Editor"
+  status = "now"   # now | later | retired
+  one = "Names, labels and the glossary"
+  skills = ["glossary", "rename"]
+  preset = "docs"
+  model = "haiku"
+  tools_note = "glossary file"
+  hands_off_to = ["gui-developer"]
+
+# ────────────────────────────────────────────
+[[departments]]
+id = "eng"
+name = "Software Engineering"
+about = "Builds and changes the apps and scripts."
+skills = ["worktree-start", "keep-connected", "python-style"]
+
+  [[departments.roles]]
+  id = "software-architect"
+  name = "Software Architect"
+  status = "now"   # now | later | retired
+  one = "How code is split: modules, ownership, refactors"
+  skills = ["module-map", "refactor-plan", "adr"]
+  preset = "docs"
+  model = "opus"
+  tools_note = "Read, git"
+  hands_off_to = ["backend-developer"]
+
+  [[departments.roles]]
+  id = "gui-developer"
+  name = "GUI Developer"
+  status = "now"   # now | later | retired
+  one = "Desktop and web screens"
+  skills = ["ui-from-screenshot", "wire-filters"]
+  preset = "builder"
+  model = "sonnet"
+  tools_note = "your UI framework, screenshots"
+  hands_off_to = ["qa-tester"]
+
+  [[departments.roles]]
+  id = "backend-developer"
+  name = "Backend Developer"
+  status = "now"   # now | later | retired
+  one = "Core logic and pipelines behind the screens"
+  skills = ["implement", "small-refactor"]
+  preset = "builder"
+  model = "sonnet"
+  tools_note = "Python, pytest"
+  hands_off_to = ["code-reviewer"]
+
+  [[departments.roles]]
+  id = "integration-developer"
+  name = "Integration Developer"
+  status = "now"   # now | later | retired
+  one = "Connections to outside services and APIs"
+  skills = ["cloud-files", "storage-upload"]
+  preset = "builder"
+  model = "sonnet"
+  tools_note = "service SDKs, credentials from .env"
+  hands_off_to = ["code-reviewer"]
+
+  [[departments.roles]]
+  id = "automation-scripter"
+  name = "Automation Scripter"
+  status = "now"   # now | later | retired
+  one = "One-off and batch scripts"
+  skills = ["batch-run", "cleanup-script"]
+  preset = "builder"
+  model = "sonnet"
+  tools_note = "Python, pandas"
+  hands_off_to = ["qa-tester"]
+
+  [[departments.roles]]
+  id = "controls-engineer"
+  name = "Controls Engineer"
+  status = "later"   # now | later | retired
+  one = "Motors, instruments and cameras on lab stations"
+  skills = ["motion", "calibration", "e-stop"]
+  preset = "hardware"
+  model = "opus"
+  tools_note = "station SDKs, serial"
+  hands_off_to = ["qa-tester"]
+
+# ────────────────────────────────────────────
+[[departments]]
+id = "data"
+name = "Data"
+about = "Where every record lives, how it's shaped, and getting it back out."
+skills = ["safe-sql", "schema-lookup"]
+
+  [[departments.roles]]
+  id = "database-architect"
+  name = "Database Architect"
+  status = "now"   # now | later | retired
+  one = "Schema design: tables, keys, versioning, traceability"
+  skills = ["schema-design", "data-adr", "review-model"]
+  preset = "docs"
+  model = "opus"
+  tools_note = "SQL (read), schema files"
+  hands_off_to = ["migration-engineer"]
+
+  [[departments.roles]]
+  id = "migration-engineer"
+  name = "Migration Engineer"
+  status = "now"   # now | later | retired
+  one = "Writes and runs schema changes, always says RUN or NOT RUN"
+  skills = ["migration", "rollback", "run-status"]
+  preset = "db-write"
+  model = "sonnet"
+  tools_note = "SQL (write after confirm)"
+  hands_off_to = ["data-steward"]
+
+  [[departments.roles]]
+  id = "data-fetcher"
+  name = "Data Fetcher"
+  status = "now"   # now | later | retired
+  one = "Answers questions from the DB with read-only queries"
+  skills = ["query", "export-csv", "explain-rows"]
+  preset = "db-read"
+  model = "haiku"
+  tools_note = "SQL SELECT"
+  hands_off_to = ["office-manager"]
+
+  [[departments.roles]]
+  id = "data-reconciler"
+  name = "Data Reconciler"
+  status = "now"   # now | later | retired
+  one = "Finds what's missing or different between Excel, pop files and the DB"
+  skills = ["reconcile", "diff-report"]
+  preset = "db-read"
+  model = "sonnet"
+  tools_note = "pandas, openpyxl, SQL (read)"
+  hands_off_to = ["migration-engineer"]
+
+  [[departments.roles]]
+  id = "data-steward"
+  name = "Data Steward"
+  status = "now"   # now | later | retired
+  one = "Keeps planned vs actual and traceability true over time"
+  skills = ["integrity-audit", "seal-check"]
+  preset = "db-read"
+  model = "sonnet"
+  tools_note = "SQL (read)"
+  hands_off_to = ["database-architect"]
+
+  [[departments.roles]]
+  id = "db-performance-engineer"
+  name = "DB Performance Engineer"
+  status = "later"   # now | later | retired
+  one = "Slow queries and slow loads"
+  skills = ["profile-query", "index-advice"]
+  preset = "db-read"
+  model = "sonnet"
+  tools_note = "SQL (read), query plans"
+  hands_off_to = ["migration-engineer"]
+
+# ────────────────────────────────────────────
+[[departments]]
+id = "analysis"
+name = "Analysis"
+about = "Turns data into answers: which option is better, what the trend is, and a clear chart."
+skills = ["results-layout", "sanity-check"]
+
+  [[departments.roles]]
+  id = "statistician"
+  name = "Statistician"
+  status = "now"   # now | later | retired
+  one = "Which variation is better, and whether the difference is real"
+  skills = ["doe-analysis", "significance", "trend"]
+  preset = "analyst"
+  model = "opus"
+  tools_note = "pandas, scipy"
+  hands_off_to = ["data-visualizer"]
+
+  [[departments.roles]]
+  id = "data-visualizer"
+  name = "Data Visualizer"
+  status = "later"   # now | later | retired
+  one = "Charts and dashboards from results"
+  skills = ["plot", "dashboard"]
+  preset = "analyst"
+  model = "sonnet"
+  tools_note = "matplotlib or your chart library"
+  hands_off_to = ["status-reporter"]
+
+# ────────────────────────────────────────────
+[[departments]]
+id = "qa"
+name = "Quality"
+about = "Finds what's broken and proves fixes work. Never reviews its own work."
+skills = ["reproduce-first", "evidence-report"]
+
+  [[departments.roles]]
+  id = "debugger"
+  name = "Debugger"
+  status = "now"   # now | later | retired
+  one = "Finds the root cause by tracing at the source"
+  skills = ["debug-trace", "read-traceback"]
+  preset = "analyst"
+  model = "opus"
+  tools_note = "Python, logs"
+  hands_off_to = ["backend-developer"]
+
+  [[departments.roles]]
+  id = "code-reviewer"
+  name = "Code Reviewer"
+  status = "now"   # now | later | retired
+  one = "Reads diffs for bugs and scope creep"
+  skills = ["review-diff", "scope-check"]
+  preset = "read-only"
+  model = "opus"
+  tools_note = "git diff"
+  hands_off_to = ["release-engineer"]
+
+  [[departments.roles]]
+  id = "qa-tester"
+  name = "QA Tester"
+  status = "now"   # now | later | retired
+  one = "Runs the real app and checks the change works"
+  skills = ["run-app", "smoke-test"]
+  preset = "analyst"
+  model = "sonnet"
+  tools_note = "app launch, UI preview"
+  hands_off_to = ["release-engineer"]
+
+  [[departments.roles]]
+  id = "test-author"
+  name = "Test Author"
+  status = "now"   # now | later | retired
+  one = "Writes a regression test for every fix"
+  skills = ["write-test", "fixture"]
+  preset = "tests-only"
+  model = "sonnet"
+  tools_note = "pytest"
+  hands_off_to = ["code-reviewer"]
+
+  [[departments.roles]]
+  id = "user-simulator"
+  name = "User Simulator"
+  status = "now"   # now | later | retired
+  one = "Walks the app as every kind of user and lists the problems"
+  skills = ["grill"]
+  preset = "analyst"
+  model = "opus"
+  tools_note = "app launch"
+  hands_off_to = ["product-manager"]
+
+# ────────────────────────────────────────────
+[[departments]]
+id = "rel"
+name = "Release & Deployment"
+about = "Gets finished work onto the branch and onto the machines."
+skills = ["branch-rules"]
+
+  [[departments.roles]]
+  id = "release-engineer"
+  name = "Release Engineer"
+  status = "now"   # now | later | retired
+  one = "Git: worktrees, commits, merges, pushes"
+  skills = ["ship", "clean-branches"]
+  preset = "shipper"
+  model = "sonnet"
+  tools_note = "git, gh"
+  hands_off_to = ["chief-of-staff"]
+
+  [[departments.roles]]
+  id = "build-engineer"
+  name = "Build Engineer"
+  status = "now"   # now | later | retired
+  one = "Builds, installers and version numbers"
+  skills = ["build-exe", "bump-version", "release-notes"]
+  preset = "builder"
+  model = "sonnet"
+  tools_note = "your build tool"
+  hands_off_to = ["deployment-engineer"]
+
+  [[departments.roles]]
+  id = "deployment-engineer"
+  name = "Deployment Engineer"
+  status = "later"   # now | later | retired
+  one = "Installs and checks software on target machines"
+  skills = ["install-check", "service-health"]
+  preset = "ask-all"
+  model = "sonnet"
+  tools_note = "install notes, remote access"
+  hands_off_to = ["chief-of-staff"]
+
+# ────────────────────────────────────────────
+[[departments]]
+id = "comms"
+name = "Communications"
+about = "Everything that leaves the office in words. Drafts only; you press Send."
+skills = ["purpose-first", "plain-formal", "draft-never-send"]
+
+  [[departments.roles]]
+  id = "inbox-reader"
+  name = "Inbox Reader"
+  status = "now"   # now | later | retired
+  one = "Reads email threads and pulls out what's being asked"
+  skills = ["read-thread", "extract-asks"]
+  preset = "mail-read"
+  model = "sonnet"
+  tools_note = "mail connector (read)"
+  hands_off_to = ["email-writer"]
+
+  [[departments.roles]]
+  id = "email-writer"
+  name = "Email Writer"
+  status = "now"   # now | later | retired
+  one = "Short, formal emails, purpose first"
+  skills = ["draft-reply", "rewrite"]
+  preset = "mail-draft"
+  model = "sonnet"
+  tools_note = "mail connector (drafts)"
+  hands_off_to = ["chief-of-staff"]
+
+  [[departments.roles]]
+  id = "chat-messenger"
+  name = "Chat Messenger"
+  status = "now"   # now | later | retired
+  one = "Simple chat messages that explain one thing"
+  skills = ["chat-explain"]
+  preset = "mail-draft"
+  model = "haiku"
+  tools_note = "chat connector (drafts)"
+  hands_off_to = ["chief-of-staff"]
+
+  [[departments.roles]]
+  id = "presentation-designer"
+  name = "Presentation Designer"
+  status = "now"   # now | later | retired
+  one = "Slides on your company template"
+  skills = ["deck", "one-slide"]
+  preset = "docs"
+  model = "sonnet"
+  tools_note = "pptx skill, your template file"
+  hands_off_to = ["chief-of-staff"]
+
+  [[departments.roles]]
+  id = "status-reporter"
+  name = "Status Reporter"
+  status = "now"   # now | later | retired
+  one = "The weekly update for the team"
+  skills = ["weekly-update"]
+  preset = "docs"
+  model = "haiku"
+  tools_note = "git log, done/"
+  hands_off_to = ["email-writer"]
+
+  [[departments.roles]]
+  id = "technical-writer"
+  name = "Technical Writer"
+  status = "later"   # now | later | retired
+  one = "User guides people will actually read"
+  skills = ["user-guide", "readable-adr"]
+  preset = "docs"
+  model = "sonnet"
+  tools_note = "docs/"
+  hands_off_to = ["product-manager"]
+
+# ────────────────────────────────────────────
+[[departments]]
+id = "ops"
+name = "Operations"
+about = "Admin around the work: access, files, meetings."
+skills = ["report-then-act"]
+
+  [[departments.roles]]
+  id = "permissions-admin"
+  name = "Permissions Admin"
+  status = "later"   # now | later | retired
+  one = "Who can do what in the apps"
+  skills = ["grant", "revoke", "audit"]
+  preset = "db-write"
+  model = "sonnet"
+  tools_note = "your grant procedure"
+  hands_off_to = ["data-steward"]
+
+  [[departments.roles]]
+  id = "file-librarian"
+  name = "File Librarian"
+  status = "later"   # now | later | retired
+  one = "Where files live on shared drives, and keeping folders tidy"
+  skills = ["find-file", "tidy-report"]
+  preset = "mail-read"
+  model = "haiku"
+  tools_note = "shared drive connector (read)"
+  hands_off_to = ["automation-scripter"]
+
+  [[departments.roles]]
+  id = "meeting-assistant"
+  name = "Meeting Assistant"
+  status = "later"   # now | later | retired
+  one = "Action items from meetings"
+  skills = ["action-items"]
+  preset = "mail-read"
+  model = "haiku"
+  tools_note = "meeting notes, calendar (read)"
+  hands_off_to = ["chief-of-staff"]
+
+# ────────────────────────────────────────────
+# Skills: does / when / steps / output / gate (empty = no approval needed)
+
+[skills."action-items"]
+does = "Action items from a meeting"
+when = "After a meeting"
+steps = ["Read notes", "who does what by when"]
+output = "actions.md"
+gate = ""
+
+[skills."add-skill"]
+does = "Give an existing role a new skill"
+when = "Staffing decision says extend"
+steps = ["Write or link the skill", "add it to the role file", "note the change"]
+output = "office/roster.toml"
+gate = ""
+
+[skills."adr"]
+does = "Record an architecture decision"
+when = "Design decided"
+steps = ["Context", "decision", "consequences"]
+output = "docs/adr/"
+gate = ""
+
+[skills."approval-gate"]
+does = "Hold anything outward-facing or hard to undo"
+when = "Send, push to main, DB write, delete"
+steps = ["Show the exact action", "wait for yes", "release"]
+output = "—"
+gate = "You say yes"
+
+[skills."ask-plain"]
+does = "Ask all open questions at once, in plain text"
+when = "Anything unclear"
+steps = ["Collect every question", "number them", "ask in one message, no popups", "wait"]
+output = "Questions in chat"
+gate = ""
+
+[skills."audit"]
+does = "Who has what"
+when = "'who can delete?'"
+steps = ["List grants", "flag odd ones"]
+output = "audit.md"
+gate = ""
+
+[skills."batch-run"]
+does = "Run a script over many folders"
+when = "'run it for all folders'"
+steps = ["List inputs", "run", "per-item log"]
+output = "batch log"
+gate = ""
+
+[skills."brainstorm"]
+does = "Many ideas fast, then the best three"
+when = "'any ideas for …'"
+steps = ["10 ideas", "filter", "top 3 with why"]
+output = "ideas.md"
+gate = ""
+
+[skills."branch-rules"]
+does = "Keep to the integration branch rules"
+when = "Any git action"
+steps = ["Integration branch only", "main only when you ask", "never force-push"]
+output = "—"
+gate = ""
+
+[skills."build-exe"]
+does = "Build the executable"
+when = "'create a new executable'"
+steps = ["Version", "build", "smoke test the exe"]
+output = "exe + notes"
+gate = ""
+
+[skills."bump-version"]
+does = "Bump version and date"
+when = "'bump to 2.0'"
+steps = ["Version file", "changelog line"]
+output = "version file"
+gate = ""
+
+[skills."calibration"]
+does = "Instrument calibration"
+when = "'calibrate'"
+steps = ["Steps from recipe", "save named calibration"]
+output = "calibration file"
+gate = ""
+
+[skills."chat-explain"]
+does = "Explain one thing in a short chat message"
+when = "'explain simply in a chat message'"
+steps = ["One point", "plain words", "no code"]
+output = "Chat draft"
+gate = "You press Send"
+
+[skills."cite-source"]
+does = "Say where every number came from"
+when = "Any value, offset or position"
+steps = ["Name the file, table or source", "prefer the primary source over copies and typed values", "no invented defaults"]
+output = "Source line next to each number"
+gate = ""
+
+[skills."clean-branches"]
+does = "Delete merged branches"
+when = "'delete merged branches'"
+steps = ["List merged", "show", "delete"]
+output = "list"
+gate = "You confirm"
+
+[skills."cleanup-script"]
+does = "Script that removes old files after a report"
+when = "'remove older than a year'"
+steps = ["Dry run", "report", "wait", "delete"]
+output = "report + log"
+gate = "You approve the report"
+
+[skills."close-task"]
+does = "Move a finished task to done/"
+when = "Last step of every task"
+steps = ["Check outputs exist", "move the task folder to done/", "set status in task.toml"]
+output = "done/<task>/"
+gate = ""
+
+[skills."cloud-files"]
+does = "Read and write files in cloud storage (SharePoint, Drive, S3 …)"
+when = "'get the file from the shared drive'"
+steps = ["Find the API", "authenticate from .env", "read or write", "cache locally"]
+output = "code + test"
+gate = ""
+
+[skills."colour"]
+does = "Colours that tell things apart"
+when = "'I can't tell variations apart'"
+steps = ["Pick distinct palette", "check contrast"]
+output = "palette"
+gate = ""
+
+[skills."convert-to-hire"]
+does = "Turn a contractor used 3+ times into an employee"
+when = "Same contractor type used a third time"
+steps = ["Usage", "propose a permanent role", "hand to Hiring Manager"]
+output = "proposal.md"
+gate = "You approve"
+
+[skills."council"]
+does = "Five independent advisors debate a decision"
+when = "'council this'"
+steps = ["5 separate analyses", "anonymous cross-review", "verdict"]
+output = "council.md"
+gate = ""
+
+[skills."daily-brief"]
+does = "Morning view of what's open and what waits for you"
+when = "Start of day or 'brief'"
+steps = ["Read open tasks", "list approval gates waiting", "list blocked items"]
+output = "Chat summary"
+gate = ""
+
+[skills."dashboard"]
+does = "A page of charts that updates"
+when = "Recurring view"
+steps = ["Data source", "charts", "publish"]
+output = "dashboard page"
+gate = ""
+
+[skills."data-adr"]
+does = "Record a data decision"
+when = "Schema decided"
+steps = ["Context", "decision", "consequences"]
+output = "docs/adr/"
+gate = ""
+
+[skills."debug-trace"]
+does = "Root cause by tracing at the source"
+when = "Bug, wrong value, 'still wrong'"
+steps = ["Reproduce", "log at the data source", "trace end to end incl. legacy path", "name the line"]
+output = "root-cause.md"
+gate = ""
+
+[skills."decision-record"]
+does = "Write a decision down so nobody re-argues it"
+when = "Any decision you made"
+steps = ["Context", "decision", "why", "date"]
+output = "docs/adr/NNNN.md"
+gate = ""
+
+[skills."deck"]
+does = "Slides on your company template"
+when = "'presentation on …'"
+steps = ["Outline", "slides", "diagrams"]
+output = "deck.pptx"
+gate = ""
+
+[skills."dedupe"]
+does = "Merge duplicate or conflicting rules"
+when = "Weekly"
+steps = ["Find overlaps", "propose merges", "apply"]
+output = "brain/rules.md"
+gate = "You confirm deletions"
+
+[skills."diff-report"]
+does = "Readable list of differences"
+when = "After reconcile"
+steps = ["Group by type", "counts", "examples"]
+output = "diff.md"
+gate = ""
+
+[skills."doe-analysis"]
+does = "Compare variations in a DOE"
+when = "Results for a DOE"
+steps = ["Group by variation", "stats", "winner"]
+output = "doe.md"
+gate = ""
+
+[skills."draft-never-send"]
+does = "Leave everything as a draft for you to send"
+when = "Any email or chat message"
+steps = ["Create draft", "tell you where it is"]
+output = "Draft in your mail or chat app"
+gate = "You press Send"
+
+[skills."draft-reply"]
+does = "Draft a reply email"
+when = "'write an email'"
+steps = ["Purpose", "facts", "ask", "draft in your mail app"]
+output = "Mail draft"
+gate = "You press Send"
+
+[skills."e-stop"]
+does = "Stop motion mid-move"
+when = "'stop the motors'"
+steps = ["Interrupt path", "test on bench"]
+output = "code + test"
+gate = ""
+
+[skills."edit-role"]
+does = "Change a role's skills, tools or preset"
+when = "'X should also …'"
+steps = ["Open form", "edit", "note the change"]
+output = "office/roster.toml"
+gate = "You approve"
+
+[skills."end-contract"]
+does = "Close a contractor when the task ends"
+when = "Task closed"
+steps = ["Archive the file", "note whether it was useful"]
+output = "office/_contractors/_done/"
+gate = ""
+
+[skills."evidence-report"]
+does = "Prove the result with evidence"
+when = "Any test or check"
+steps = ["Commands run", "outputs", "screenshots", "what wasn't covered"]
+output = "evidence.md"
+gate = ""
+
+[skills."explain-rows"]
+does = "Explain what some rows mean"
+when = "'what is this row?'"
+steps = ["Follow keys", "describe in plain words"]
+output = "Chat reply"
+gate = ""
+
+[skills."export-csv"]
+does = "Export query results to CSV"
+when = "'give me a sheet of …'"
+steps = ["Query", "CSV in out/"]
+output = "export.csv"
+gate = ""
+
+[skills."extend-before-hire"]
+does = "Prefer giving an existing role a new skill over hiring"
+when = "Any staffing request"
+steps = ["Does a role already own this?", "can it take one more skill and still do one thing?", "if not, a contractor", "only then a new hire"]
+output = "Decision line in staffing.md"
+gate = ""
+
+[skills."extract-asks"]
+does = "Pull out what is being asked of you"
+when = "After read-thread"
+steps = ["Asks", "owner", "due"]
+output = "asks.md"
+gate = ""
+
+[skills."failure-modes"]
+does = "List ways a flow can fail"
+when = "'will this work for every case?'"
+steps = ["Inputs × states", "failures", "guards"]
+output = "fmea.md"
+gate = ""
+
+[skills."find-file"]
+does = "Find where a file lives"
+when = "'where is that sheet saved?'"
+steps = ["Search the shared drives", "give the path"]
+output = "Path"
+gate = ""
+
+[skills."first-principles"]
+does = "Rebuild from basics when stuck"
+when = "Same fix failing twice"
+steps = ["Facts only", "constraints", "simplest path"]
+output = "notes"
+gate = ""
+
+[skills."fixture"]
+does = "Make small real test data"
+when = "Test needs data"
+steps = ["Trim real file", "save in tests/files"]
+output = "fixture"
+gate = ""
+
+[skills."flow-review"]
+does = "Review a flow for extra steps"
+when = "'how convenient is this?'"
+steps = ["Walk it", "count clicks and scrolls", "fixes"]
+output = "flow-review.md"
+gate = ""
+
+[skills."forget-wrong"]
+does = "Remove a rule that is no longer true"
+when = "'that's not true anymore'"
+steps = ["Find the rule", "delete", "note why"]
+output = "brain/rules.md"
+gate = "You confirm"
+
+[skills."gap-check"]
+does = "Find which parts of a task nobody on the roster can do"
+when = "Office Manager can't route all of a task"
+steps = ["Split the task into parts", "match each part to role skills", "list the gaps"]
+output = "out/<task>/gaps.md"
+gate = ""
+
+[skills."glossary"]
+does = "Keep the glossary of your terms"
+when = "New term used"
+steps = ["Add term", "meaning", "old names"]
+output = "glossary.md"
+gate = ""
+
+[skills."glossary-check"]
+does = "Use your words, not the code's"
+when = "Any label or message"
+steps = ["Check the glossary", "replace code names with domain names"]
+output = "Renamed labels"
+gate = ""
+
+[skills."grant"]
+does = "Give a user a role"
+when = "'give X editor access'"
+steps = ["Check role", "show the grant", "run"]
+output = "grant log"
+gate = "You confirm"
+
+[skills."grill"]
+does = "Walk the app as every kind of user and list problems"
+when = "'grill <app>'"
+steps = ["User types", "every path", "problems by severity"]
+output = "grill.md"
+gate = ""
+
+[skills."hand-off"]
+does = "Pass work to the next role with everything they need"
+when = "End of your part"
+steps = ["Write what was done, what's left, files touched", "name the next role"]
+output = "out/<task>/handoff-<role>.md"
+gate = ""
+
+[skills."handoff"]
+does = "Snapshot so a fresh session can continue"
+when = "Long session or stepping away"
+steps = ["Goal", "state", "files", "failed tries", "next steps"]
+output = "HANDOFF.md"
+gate = ""
+
+[skills."hire"]
+does = "Create a new employee from the blank form"
+when = "'we need …'"
+steps = ["Ask 5 questions", "fill the employee form", "pick a preset", "add to office/roster.toml", "run tools/build_agents.py"]
+output = "office/roster.toml + .claude/agents/<id>.md"
+gate = "You approve the form"
+
+[skills."hire-contractor"]
+does = "Bring in a one-task specialist"
+when = "Part of a task nobody covers and that won't repeat"
+steps = ["Short spec", "read-only preset by default", "attach to the task", "start"]
+output = "office/_contractors/<task>-<role>.md"
+gate = "You approve if it needs write access"
+
+[skills."implement"]
+does = "Implement an approved change"
+when = "Plan approved"
+steps = ["Worktree", "code", "tests", "hand to review"]
+output = "diff.patch"
+gate = ""
+
+[skills."index-advice"]
+does = "Suggest indexes"
+when = "Slow query found"
+steps = ["Plan", "candidate index", "expected gain"]
+output = "index.sql"
+gate = "You confirm"
+
+[skills."install-check"]
+does = "Check an install on a target machine"
+when = "After install"
+steps = ["Version", "config", "test run"]
+output = "install.md"
+gate = ""
+
+[skills."integrity-audit"]
+does = "Check traceability rules still hold"
+when = "Weekly or after big writes"
+steps = ["Run checks", "list violations"]
+output = "audit.md"
+gate = ""
+
+[skills."job-spec"]
+does = "Write the one-thing job spec before the form"
+when = "New hire approved"
+steps = ["One thing", "never does", "hands off to", "permissions", "model"]
+output = "job-spec.md"
+gate = ""
+
+[skills."keep-connected"]
+does = "Find everything a change touches: code, DB, tests, docs, memory"
+when = "Renames, new fields, changed formats"
+steps = ["Grep for old names", "list callers and fixtures", "update or flag each"]
+output = "Impact list"
+gate = ""
+
+[skills."layout"]
+does = "Arrange a screen so nothing hides"
+when = "'I don't see the buttons'"
+steps = ["Group", "order by use", "check at small size"]
+output = "layout sketch"
+gate = ""
+
+[skills."migration"]
+does = "Write and run a schema change"
+when = "Approved design"
+steps = ["Write SQL", "show it", "run", "report RUN"]
+output = "migrations/NNN.sql"
+gate = "You confirm before RUN"
+
+[skills."module-map"]
+does = "Map modules and who owns what"
+when = "Before a refactor"
+steps = ["List modules", "dependencies", "owners"]
+output = "module-map.md"
+gate = ""
+
+[skills."motion"]
+does = "Move station motors safely"
+when = "Any move"
+steps = ["Check limits", "move", "confirm position"]
+output = "log"
+gate = "You confirm each new move type"
+
+[skills."onboard"]
+does = "Set up a new hire so it works on day one"
+when = "After a hire"
+steps = ["Check the role links brain, company and department skills", "pick a preset", "build", "run a small test task"]
+output = "onboarding note in the task log"
+gate = ""
+
+[skills."one-slide"]
+does = "One slide, content unchanged"
+when = "'just one slide'"
+steps = ["Fit content", "template"]
+output = "slide.pptx"
+gate = ""
+
+[skills."options"]
+does = "Options with one recommendation"
+when = "Messy problem"
+steps = ["Split the problem", "options", "pick"]
+output = "options.md"
+gate = ""
+
+[skills."options-with-pick"]
+does = "Give 2–3 options and pick one"
+when = "Any open question"
+steps = ["Options", "trade-offs in one line each", "one recommendation with reason"]
+output = "options.md"
+gate = ""
+
+[skills."overlap-check"]
+does = "Find two roles doing the same thing"
+when = "Monthly or after hires"
+steps = ["Compare skills", "flag overlaps", "suggest who keeps it"]
+output = "overlaps.md"
+gate = ""
+
+[skills."pick-up-task"]
+does = "Take a task from inbox/ and confirm its scope"
+when = "Every task, first step"
+steps = ["Read task.toml and log.md", "read brain/rules.md", "list what's in and out of scope"]
+output = "Note in log.md"
+gate = ""
+
+[skills."plain-formal"]
+does = "Short, formal, no emojis, no code references"
+when = "Any outgoing text"
+steps = ["Purpose in line 1", "facts", "ask", "sign-off"]
+output = "—"
+gate = ""
+
+[skills."plan-gate"]
+does = "Stop for approval before big changes"
+when = "Change touches 3+ files, schema, or geometry"
+steps = ["Collect plan from the owner", "3–5 bullets", "wait"]
+output = "out/<task>/plan.md"
+gate = "You approve the plan"
+
+[skills."plot"]
+does = "One clear chart"
+when = "'plot …'"
+steps = ["Pick chart type", "draw", "label units"]
+output = "png / html"
+gate = ""
+
+[skills."pre-mortem"]
+does = "Imagine it failed; find why"
+when = "Before a big change"
+steps = ["Failure stories", "causes", "prevention"]
+output = "pre-mortem.md"
+gate = ""
+
+[skills."profile-query"]
+does = "Find why a load is slow"
+when = "'this screen takes minutes to open'"
+steps = ["Time each query", "plan", "slowest first"]
+output = "perf.md"
+gate = ""
+
+[skills."purpose-first"]
+does = "Ask what a message is for before writing it"
+when = "Any message"
+steps = ["Who reads it", "what they should do after", "then write"]
+output = "—"
+gate = ""
+
+[skills."python-style"]
+does = "Write Python that is short, clear and tested"
+when = "Any Python"
+steps = ["Follow the style guide", "tests beside the change", "no dead code"]
+output = "Code + tests"
+gate = ""
+
+[skills."query"]
+does = "Answer a question from the DB"
+when = "'who decided …', 'how many …'"
+steps = ["Find tables", "SELECT", "plain answer + the query"]
+output = "answer + SQL"
+gate = ""
+
+[skills."read-thread"]
+does = "Summarise an email thread"
+when = "'check email …'"
+steps = ["Find thread", "who asked what", "open points"]
+output = "thread.md"
+gate = ""
+
+[skills."read-traceback"]
+does = "Read a traceback and find the real cause"
+when = "Pasted error"
+steps = ["Bottom frame", "our code frame", "why"]
+output = "Chat reply"
+gate = ""
+
+[skills."readable-adr"]
+does = "Make ADRs readable for the team"
+when = "After decisions"
+steps = ["Plain summary on top"]
+output = "summary.md"
+gate = ""
+
+[skills."reconcile"]
+does = "Spreadsheets or files vs the DB"
+when = "'add what's missing from this file'"
+steps = ["Load both", "match by key", "missing / different / extra"]
+output = "reconcile.md"
+gate = ""
+
+[skills."reduce-steps"]
+does = "Remove steps the data can decide"
+when = "'don't make the user choose'"
+steps = ["Find choices", "automate the decidable ones"]
+output = "proposal"
+gate = ""
+
+[skills."refactor-plan"]
+does = "Plan a clean-up in safe steps"
+when = "'clean the code'"
+steps = ["Problems", "steps", "tests per step"]
+output = "refactor-plan.md"
+gate = "You approve the plan"
+
+[skills."release-notes"]
+does = "Short notes on what changed"
+when = "Every build"
+steps = ["Commits since last", "plain list"]
+output = "release-notes.md"
+gate = ""
+
+[skills."remember"]
+does = "Save a new rule you gave"
+when = "You correct or decide something"
+steps = ["Check brain/rules.md", "update or add the rule with the date and why"]
+output = "brain/rules.md"
+gate = ""
+
+[skills."rename"]
+does = "Rename across code and UI"
+when = "'call it X instead'"
+steps = ["Find all uses", "rename", "keep-connected check"]
+output = "diff"
+gate = ""
+
+[skills."report-back"]
+does = "Report as done / not done / blocked"
+when = "End of every task"
+steps = ["Three lists", "one line each", "link to outputs"]
+output = "Reply in chat"
+gate = ""
+
+[skills."report-then-act"]
+does = "Report first, act only after approval"
+when = "Any cleanup or admin change"
+steps = ["Dry run", "report", "wait", "apply"]
+output = "report.md"
+gate = "You approve the report"
+
+[skills."reproduce-first"]
+does = "Reproduce the problem before touching anything"
+when = "Any bug"
+steps = ["Get the exact steps or data", "reproduce", "only then investigate"]
+output = "repro.md"
+gate = ""
+
+[skills."requirements"]
+does = "Turn asks into a clear requirement list"
+when = "New feature or email ask"
+steps = ["Who", "what", "done-when"]
+output = "requirements.md"
+gate = ""
+
+[skills."results-layout"]
+does = "Write results the same way every time"
+when = "Any batch analysis"
+steps = ["One folder per batch", "an 'all' folder with combined CSVs", "nothing written outside the batch folder"]
+output = "CSV folders"
+gate = ""
+
+[skills."retire"]
+does = "Archive a role nobody uses"
+when = "Unused for 60 days"
+steps = ["Usage report", "archive"]
+output = "status = \"retired\" in office/roster.toml"
+gate = "You confirm"
+
+[skills."review-diff"]
+does = "Review a diff for bugs"
+when = "Before ship"
+steps = ["Read diff", "correctness", "edge cases"]
+output = "review.md"
+gate = ""
+
+[skills."review-model"]
+does = "Review an existing model for problems"
+when = "'database sucks at this point'"
+steps = ["Read schema", "list problems", "fix order"]
+output = "review.md"
+gate = ""
+
+[skills."revoke"]
+does = "Remove a role"
+when = "'remove X'"
+steps = ["Show", "run"]
+output = "log"
+gate = "You confirm"
+
+[skills."rewrite"]
+does = "Rewrite to be shorter or clearer"
+when = "'rewrite the email'"
+steps = ["Keep facts", "cut", "tone"]
+output = "new draft"
+gate = ""
+
+[skills."role-review"]
+does = "Which roles are used, corrected or idle"
+when = "Monthly"
+steps = ["Count tasks and corrections per role", "suggest merge, retrain or retire"]
+output = "review.md"
+gate = ""
+
+[skills."rollback"]
+does = "Undo a migration safely"
+when = "Something broke"
+steps = ["Rollback SQL", "show", "run"]
+output = "rollback.sql"
+gate = "You confirm"
+
+[skills."roster-sync"]
+does = "Keep the roster page and org chart matching office/"
+when = "Any hire, change or retirement"
+steps = ["Read office/roster.toml", "run tools/build_agents.py and tools/build_site.py", "check the page"]
+output = ".claude/agents/ + site/index.html"
+gate = ""
+
+[skills."route"]
+does = "Turn your one-liner into a task and pick the fewest roles needed"
+when = "Any message to the office"
+steps = ["Read brain", "classify", "pick the fewest roles in order", "create inbox/<task>/task.toml"]
+output = "inbox/<task>/task.toml"
+gate = ""
+
+[skills."run-app"]
+does = "Run the real app and use the change"
+when = "After implement"
+steps = ["Launch", "do the user's steps", "screenshot"]
+output = "evidence.md"
+gate = ""
+
+[skills."run-status"]
+does = "Which migrations ran on the live DB"
+when = "'did 135 run?'"
+steps = ["Query version table", "list RUN / NOT RUN"]
+output = "Chat reply"
+gate = ""
+
+[skills."safe-sql"]
+does = "Read by default; writes only after you approve the exact SQL"
+when = "Any DB access"
+steps = ["SELECT freely", "show any write as SQL", "wait", "run", "report RUN or NOT RUN"]
+output = "Query log"
+gate = "Writes need your yes"
+
+[skills."sanity-check"]
+does = "Order-of-magnitude check on every result"
+when = "Before handing off a number"
+steps = ["Estimate by hand", "compare", "flag if off by more than 2×"]
+output = "Sanity line in the result"
+gate = ""
+
+[skills."schema-design"]
+does = "Design tables, keys and versioning"
+when = "New data or 'schema should make sense'"
+steps = ["Entities", "keys", "versioning (insert-only)", "review"]
+output = "schema.md"
+gate = "You approve the design"
+
+[skills."schema-lookup"]
+does = "Find the right table and column before querying"
+when = "Any data question"
+steps = ["Search the schema", "check foreign keys", "note the identity key"]
+output = "Short table map"
+gate = ""
+
+[skills."scope-check"]
+does = "Flag changes outside the plan"
+when = "Before ship"
+steps = ["Compare diff to plan", "list extras"]
+output = "scope.md"
+gate = ""
+
+[skills."screenshot-review"]
+does = "Review a screen from a screenshot"
+when = "Any UI image"
+steps = ["Check layout, scroll, visibility, wording, colour contrast", "list fixes in order"]
+output = "ux-notes.md"
+gate = ""
+
+[skills."seal-check"]
+does = "Check a sealed record wasn't changed"
+when = "Before replication or print"
+steps = ["Compare hash or version", "report"]
+output = "seal.md"
+gate = ""
+
+[skills."self-check"]
+does = "Check your own output before calling it done"
+when = "Before any hand-off"
+steps = ["Re-read the task", "check each output exists", "run the smallest proof", "list what wasn't checked"]
+output = "Check notes in the result"
+gate = ""
+
+[skills."service-health"]
+does = "Check a background service is running"
+when = "Weekly or after a failure"
+steps = ["Last run time", "errors", "restart advice"]
+output = "health.md"
+gate = ""
+
+[skills."ship"]
+does = "Commit, merge to integration, push"
+when = "'ship', 'push it', 'commit and push'"
+steps = ["Check worktree has only this task", "tests", "commit", "merge", "push"]
+output = "shipped.txt (commit id)"
+gate = ""
+
+[skills."significance"]
+does = "Is the difference real?"
+when = "Two groups to compare"
+steps = ["Test", "p-value and effect size", "plain answer"]
+output = "stats.md"
+gate = ""
+
+[skills."small-refactor"]
+does = "Tidy code you're already touching"
+when = "During implement"
+steps = ["Only touched files", "no behaviour change"]
+output = "diff"
+gate = ""
+
+[skills."smoke-test"]
+does = "Quick check the app still starts and main flows work"
+when = "After any change"
+steps = ["Start", "open main screens", "close"]
+output = "smoke.md"
+gate = ""
+
+[skills."staffing-decision"]
+does = "Decide per gap: existing role, new skill, contractor or new hire"
+when = "After gap-check"
+steps = ["Apply extend-before-hire", "one recommendation per gap with the reason"]
+output = "out/<task>/staffing.md"
+gate = "You approve"
+
+[skills."status"]
+does = "Done / not done / blocked across all tasks"
+when = "'done?', 'status?', 'what are we waiting for?'"
+steps = ["Scan inbox/, out/ and done/", "check branches and worktrees", "three lists"]
+output = "Chat reply"
+gate = ""
+
+[skills."storage-upload"]
+does = "Upload files to object storage"
+when = "'upload to storage'"
+steps = ["Container and path rule", "upload", "store the link"]
+output = "code + test"
+gate = ""
+
+[skills."theme"]
+does = "Keep one look across apps"
+when = "Any new screen"
+steps = ["Use the project's theme tokens", "no one-off colours"]
+output = "—"
+gate = ""
+
+[skills."tidy-report"]
+does = "Report folders that need tidying"
+when = "Monthly"
+steps = ["Old / duplicate / misplaced", "report"]
+output = "tidy.md"
+gate = ""
+
+[skills."todo-from-handover"]
+does = "Your to-do list from a handover or email"
+when = "'tell me my to-do list'"
+steps = ["Read thread", "extract tasks", "order"]
+output = "todo.md"
+gate = ""
+
+[skills."trend"]
+does = "Trend across batches or over time"
+when = "'is it getting better?'"
+steps = ["Series", "trend", "outliers"]
+output = "trend.png"
+gate = ""
+
+[skills."ui-from-screenshot"]
+does = "Build a UI change from a screenshot and note"
+when = "'[Image] fix this'"
+steps = ["Read image", "find the widget", "change", "screenshot after"]
+output = "diff + screenshot"
+gate = ""
+
+[skills."user-flows"]
+does = "Draw the steps a user takes"
+when = "New or changed flow"
+steps = ["Start", "steps", "end", "pain points"]
+output = "flow.md"
+gate = ""
+
+[skills."user-guide"]
+does = "A guide people will read"
+when = "New app or feature"
+steps = ["Tasks not features", "screenshots", "one page"]
+output = "guide.md"
+gate = ""
+
+[skills."weekly-update"]
+does = "Weekly team update"
+when = "'status update'"
+steps = ["Commits + done/", "by project", "short"]
+output = "update.md"
+gate = ""
+
+[skills."what-if"]
+does = "Explore a scenario"
+when = "'what if we …'"
+steps = ["Assume", "consequences", "risks"]
+output = "what-if.md"
+gate = ""
+
+[skills."wire-filters"]
+does = "Make filters filter each other"
+when = "'everything filters something else'"
+steps = ["Map filter chain", "wire", "test combos"]
+output = "diff"
+gate = ""
+
+[skills."worktree-start"]
+does = "Start code work in a fresh worktree off the integration branch"
+when = "Any code change"
+steps = ["New worktree", "branch from integration", "work only there"]
+output = "Worktree path"
+gate = ""
+
+[skills."write-skill"]
+does = "Write a new skill from the blank skill form"
+when = "New skill approved"
+steps = ["Trigger", "steps", "output", "gate", "add to office/roster.toml", "try it on a sample task"]
+output = "office/roster.toml [skills.<id>]"
+gate = ""
+
+[skills."write-test"]
+does = "Regression test for a fix"
+when = "Any bug fix"
+steps = ["Test that fails before", "passes after"]
+output = "tests/test_*.py"
+gate = ""

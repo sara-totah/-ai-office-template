@@ -1,0 +1,10 @@
+id = "2026-11-20-review-build-site"
+title = "Review tools/build_site.py for bugs"
+request = "review tools/build_site.py for bugs. Read-only, no code changes. Keep it to one employee if that's enough."
+created = "2026-11-20 12:17"
+status = "done"
+chain = ["code-reviewer"]
+step = 0
+current = "code-reviewer"
+waiting_for_you = ""
+result = "done"

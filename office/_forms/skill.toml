@@ -1,0 +1,9 @@
+# Blank skill form. The Skill Trainer fills this in, you approve it,
+# then it is pasted at the bottom of office/roster.toml and listed in a role's `skills`.
+
+[skills."skill-id"]
+does = ""        # what it does, one line
+when = ""        # when it runs, in the user's own words, e.g. "'ship', 'push it'"
+steps = []       # 3-6 short steps, in order
+output = ""      # the file it writes, e.g. "out/<task>/findings.md"
+gate = ""        # empty, or the approval it needs, e.g. "You confirm the SQL"
